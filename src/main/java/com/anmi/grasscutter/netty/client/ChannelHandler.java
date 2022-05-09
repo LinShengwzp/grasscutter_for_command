@@ -21,27 +21,13 @@ public class ChannelHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         super.channelRead(ctx, msg);
         String commandStr = msg.toString();
+        log.info("receive message: [{}]", commandStr);
         if (commandStr.startsWith("SERVER_COMMAND_MESSAGE::")) {
             String input = commandStr.replace("SERVER_COMMAND_MESSAGE::", "");
-            log.info("receive message: " + input);
             MessageSend.setFlag(1, input);
         } else {
             MessageSend.setFlag(1, "");
         }
-    }
-
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        if (evt instanceof IdleStateEvent idleEvent) {//超时事件
-            if (idleEvent.state() == IdleState.READER_IDLE) {//读
-
-            } else if (idleEvent.state() == IdleState.WRITER_IDLE) {//写
-
-            } else if (idleEvent.state() == IdleState.ALL_IDLE) {//全部
-
-            }
-        }
-        super.userEventTriggered(ctx, evt);
     }
 
     @Override

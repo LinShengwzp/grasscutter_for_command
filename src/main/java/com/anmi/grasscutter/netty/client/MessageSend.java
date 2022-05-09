@@ -104,7 +104,7 @@ public class MessageSend {
             ChannelFuture future = bootstrap.connect(host, port).sync();
             channel = future.channel();
             MessageSend.connSuccess = true;
-            log.info("connect the server success on");
+            log.info("connect the server success");
         } catch (Exception e) {
             e.printStackTrace();
             disconnect(true);
@@ -121,6 +121,7 @@ public class MessageSend {
 
     public String sendCommand(String command) {
         synchronized (MessageSend.WAITING_OBJECT) {
+            log.info("send command: [{}]", command);
             String commandFormat = MessageFormat.format("SERVER_COMMAND::{0}", command);
             channel.writeAndFlush(Unpooled.wrappedBuffer(commandFormat.getBytes()));
             try {
