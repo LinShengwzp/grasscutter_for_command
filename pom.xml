@@ -14,7 +14,7 @@
     <name>grasscutter</name>
     <description>grasscutter</description>
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>18</java.version>
     </properties>
 
     <dependencyManagement>

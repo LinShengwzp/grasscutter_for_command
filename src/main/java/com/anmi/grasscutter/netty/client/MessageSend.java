@@ -7,25 +7,49 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.text.MessageFormat;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * @author wzp12
+ */
 @Slf4j
 @Component
 public class MessageSend {
 
-    private static final EventLoopGroup group = new NioEventLoopGroup(2);
-
-    //    private static final String HOST = "43.138.56.77";
-    private static final String HOST = "localhost";
-    private static final int PORT = 8824;
-
+    private static final EventLoopGroup GROUP = new NioEventLoopGroup(2);
+    private static String HOST = "localhost";
+    private static int PORT = 8824;
     private static Channel channel;
+    public static final Object WAITING_OBJECT = new Object();
+    private static int resCode = 0;
+    private static int flag = 0;
+    private static String msg = "";
 
-    public MessageSend() {
-        this.connect(HOST, PORT);
+    @Value("${server.listen-host}")
+    public void setHost(String host) {
+        MessageSend.HOST = host;
+        init();
+    }
+
+    @Value("${server.listen-port}")
+    public void setPort(int port) {
+        MessageSend.PORT = port;
+        init();
+    }
+
+    private void init() {
+        if (flag == 2) {
+            this.connect(HOST, PORT);
+            flag = 0;
+            return;
+        }
+        flag ++;
     }
 
     /**
@@ -36,12 +60,14 @@ public class MessageSend {
      */
     private void connect(String host, int port) {
         Bootstrap bootstrap = new Bootstrap();
-        bootstrap.group(group)
+        bootstrap.group(GROUP)
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) {
+                        //读超时时间设置为10s，0表示不监控
+                        socketChannel.pipeline().addLast(new IdleStateHandler(10, 0, 0, TimeUnit.SECONDS));
                         //处理字符串
                         socketChannel.pipeline().addLast(new StringDecoder());
                         //自定义的处理逻辑
@@ -52,42 +78,35 @@ public class MessageSend {
             // 发起异步连接操作
             ChannelFuture future = bootstrap.connect(host, port).sync();
             channel = future.channel();
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static int flag = 0;
-    private static String msg = "";
-
     public static void setFlag(int newVal, String msg) {
-        MessageSend.flag = newVal;
-        MessageSend.msg = msg;
+        synchronized (MessageSend.WAITING_OBJECT) {
+            MessageSend.resCode = newVal;
+            MessageSend.msg = msg;
+            MessageSend.WAITING_OBJECT.notify();
+        }
     }
 
+
     public static String sendCommand(String command) {
-        String commandFormat = MessageFormat.format("SERVER_COMMAND::{0}", command);
-        channel.writeAndFlush(Unpooled.wrappedBuffer(commandFormat.getBytes()));
-        int flagCopy = MessageSend.flag;
-        int times = 0, maxTimes = 10;
-        try {
-            while (times <= maxTimes) {
-                Thread.sleep(500);
-                times ++;
-                if (flagCopy == (MessageSend.flag + 1)) {
-                    MessageSend.flag = 0;
-                    return MessageSend.msg;
-                }
+        synchronized (MessageSend.WAITING_OBJECT) {
+            String commandFormat = MessageFormat.format("SERVER_COMMAND::{0}", command);
+            channel.writeAndFlush(Unpooled.wrappedBuffer(commandFormat.getBytes()));
+            try {
+                MessageSend.WAITING_OBJECT.wait();
+                return MessageSend.msg;
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         }
-        return "";
     }
 
     public static void disconnect() throws InterruptedException {
         channel.closeFuture().sync();
-        group.shutdownGracefully();
+        GROUP.shutdownGracefully();
     }
 }

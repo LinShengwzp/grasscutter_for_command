@@ -1,2 +1,4 @@
 server:
   port: 8000
+  listen-host: 43.138.56.77
+  listen-port: 8824
