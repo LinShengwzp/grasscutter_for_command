@@ -1,13 +1,21 @@
 package com.anmi.grasscutter.modules.controller;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.servlet.ModelAndView;
 
 @Controller
 public class IndexController {
     @GetMapping("main")
-    public ModelAndView main() {
-        return new  ModelAndView("main");
+    public String main(Model model) {
+        model.addAttribute("title", "自定义");
+        model.addAttribute("onContent", "自定义");
+        return "main";
+    }
+
+    @GetMapping("index")
+    public String index() {
+
+        return "index";
     }
 }
