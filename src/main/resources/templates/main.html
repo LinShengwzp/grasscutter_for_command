@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 <head>
     <meta charset="UTF-8">
     <!-- import CSS -->
-    <title th:text="${title}"></title>
+    <title></title>
     <link href="lib/element-ui/theme-chalk/index.css" rel="stylesheet">
 </head>
 <body>
 <div id="app">
     <el-button @click="visible = true">Button</el-button>
     <el-dialog :visible.sync="visible" title="Hello world">
-        <p th:text="${onContent}"></p>
+        <p></p>
     </el-dialog>
 </div>
 </body>
