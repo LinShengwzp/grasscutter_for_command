@@ -1,5 +1,12 @@
 server:
   port: 8000
-#  listen-host: 43.138.56.77
   listen-host: localhost
   listen-port: 8824
+spring:
+  thymeleaf:
+    enabled: true
+    check-template: true
+    mode: HTML
+    prefix: classpath:/templates/
+    check-template-location: true
+    encoding: UTF-8
